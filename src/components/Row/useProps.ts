@@ -1,26 +1,28 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "../../axios";
+import { useQuery } from "@tanstack/react-query";
 import { Movie } from "../../type.ts";
 import { requests } from "../../request.ts";
 
-export const useProps = (fetchUrl: string) => {
-  const [movies, setMovies] = useState<Movie[]>([]);
+export const useProps = (fetchUrl: string, title: string) => {
   const [trailerUrl, setTrailerUrl] = useState<string | null>("");
+  const fetchData = async () => {
+    const request = await axios.get(fetchUrl);
 
-  useEffect(() => {
-    async function fetchData() {
-      const request = await axios.get(fetchUrl);
-      const movies = request.data.results.map((movie: Movie) => ({
-        id: movie.id,
-        name: movie.name,
-        poster_path: movie.poster_path,
-        backdrop_path: movie.backdrop_path,
-      }));
-      setMovies(movies);
-      return request;
-    }
-    fetchData();
-  }, [fetchUrl]);
+    // データ数を10個に制限
+    return request.data.results.slice(0, 10).map((movie: Movie) => ({
+      id: movie.id,
+      name: movie.name,
+      poster_path: movie.poster_path,
+      backdrop_path: movie.backdrop_path,
+    }));
+  };
+
+  const { data: movies, isLoading } = useQuery({
+    // Rowコンポーネントはカテゴリーごとに複数あるので、それぞれれ別のステートとして管理する
+    queryKey: [`${title}/movies`],
+    queryFn: fetchData,
+  });
 
   const handleClick = async (movie: Movie) => {
     if (trailerUrl) {
@@ -35,5 +37,6 @@ export const useProps = (fetchUrl: string) => {
     movies,
     trailerUrl,
     handleClick,
+    isLoading,
   };
 };

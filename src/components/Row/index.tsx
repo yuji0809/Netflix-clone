@@ -1,14 +1,6 @@
 import { useProps } from "./useProps";
-import { Layout } from "./Layout";
+import { Layout, Props } from "./Layout";
 
-type Props = {
-  title: string;
-  fetchUrl: string;
-  isLargeRow?: boolean;
-};
-
-export const Row = ({ title, fetchUrl, isLargeRow }: Props) => {
-  return (
-    <Layout title={title} isLargeRow={isLargeRow} {...useProps(fetchUrl)} />
-  );
+export const Row = ({ title, fetchUrl }: Props) => {
+  return <Layout title={title} {...useProps(fetchUrl, title)} />;
 };
