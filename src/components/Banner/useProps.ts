@@ -1,25 +1,41 @@
-import { useEffect, useState } from "react";
-import axios from "../../axios";
+import axios from "../../axios.ts";
 import { requests } from "../../request.ts";
 import { Movie } from "../../type.ts";
+import { useQuery } from "@tanstack/react-query";
+import { useContext, useEffect } from "react";
+import { BannerDataContext } from "../../BannerDataContext.tsx";
 
 export const useProps = () => {
-  const [movie, setMovie] = useState<Movie>();
+  const { setMovie } = useContext(BannerDataContext);
+
+  // ① react-queryを用いて初期データを取得
+  const fetchMovie = async () => {
+    const request = await axios.get(requests.fetchNetflixOriginals);
+    const randomIndex = Math.floor(
+      Math.random() * request.data.results.length - 1,
+    );
+    const movieUrl = await axios.get(
+      requests.fetchMovieVideos(request.data.results[randomIndex].id),
+    );
+    return {
+      movieData: request.data.results[randomIndex] as Movie,
+      movieUrl: movieUrl.data.results[0]?.key,
+    };
+  };
+
+  const { data } = useQuery({
+    queryKey: ["movie"],
+    queryFn: fetchMovie,
+  });
+
   useEffect(() => {
-    async function fetchData() {
-      const request = await axios.get(requests.fetchNetflixOriginals);
-
-      //apiからランダムで値を取得している
-      setMovie(
-        request.data.results[
-          Math.floor(Math.random() * request.data.results.length - 1)
-        ],
-      );
+    if (data) {
+      // ②初期データをグローバルステートに格納
+      setMovie(data.movieData);
     }
-    fetchData();
-  }, []);
+  }, [data, setMovie]);
 
-  // descriptionの切り捨てよう関数
+  // descriptionの切り捨て用関数
   const truncate = (str: string | undefined, n: number): string => {
     if (!str) {
       return "";
@@ -32,7 +48,6 @@ export const useProps = () => {
   };
 
   return {
-    movie,
     truncate,
   };
 };
